@@ -10,7 +10,7 @@ local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
-local CombatTab = Window:CreateTab("Combat")
+local CombatTab = Window:CreateTab("Combat") 
 
 CombatTab:CreateSection("Aimbot Settings")
 local AimToggle = CombatTab:CreateToggle({Name = "Enable Aimbot", Default = false})
