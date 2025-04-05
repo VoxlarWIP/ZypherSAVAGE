@@ -1,21 +1,86 @@
 local Luna = loadstring(game:HttpGet("https://raw.githubusercontent.com/Nebula-Softworks/Luna-Interface-Suite/refs/heads/main/source.lua", true))()
-
 local Window = Luna:CreateWindow({
-    Name = "ZypherHub | Dead Rails",
+    Name = "Dead Rails Hub",
     Theme = "Dark",
     Size = UDim2.new(0, 500, 0, 400)
 })
 
--- Aimbot of curse 
+-- Services
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Create all tabs at the top
+local CombatTab = Window:CreateTab("Combat")
+local VisualTab = Window:CreateTab("Visuals")
+local PlayerTab = Window:CreateTab("Player")
+
+-- COMBAT TAB --
+CombatTab:CreateSection("Aimbot Settings")
+local AimToggle = CombatTab:CreateToggle({Name = "Enable Aimbot", Default = false})
+local AimFOV = CombatTab:CreateSlider({Name = "FOV Size", Min = 30, Max = 300, Default = 100})
+local AimPart = CombatTab:CreateDropdown({Name = "Aim Part", Options = {"Head", "Torso"}, Default = "Head"})
+local HorseToggle = CombatTab:CreateToggle({Name = "Ignore Horses", Default = true})
+local WallToggle = CombatTab:CreateToggle({Name = "Wall Check", Default = true})
+local AimKey = CombatTab:CreateKeybind({Name = "Aimbot Hotkey", Default = "Q"})
+
+-- VISUAL TAB --
+VisualTab:CreateSection("ESP Settings")
+local NpcEsp = VisualTab:CreateToggle({Name = "NPC Outlines", Default = false})
+local CorpseEsp = VisualTab:CreateToggle({Name = "Corpse Outlines", Default = false})
+local OreEsp = VisualTab:CreateToggle({Name = "Ore Outlines", Default = false})
+local ToolEsp = VisualTab:CreateToggle({Name = "Tool Outlines", Default = false})
+local ItemEsp = VisualTab:CreateToggle({Name = "Item Outlines", Default = false})
+local ScanSpeed = VisualTab:CreateSlider({Name = "Scan Interval", Min = 0.1, Max = 5, Default = 0.5})
+
+-- PLAYER TAB --
+PlayerTab:CreateSection("NoClip Settings")
+local NoclipToggle = PlayerTab:CreateToggle({Name = "Enable NoClip", Default = false})
+local NoclipKey = PlayerTab:CreateKeybind({Name = "NoClip Hotkey", Default = "F"})
+local NoclipBtn = PlayerTab:CreateToggle({Name = "Show Button", Default = true})
+
+-- Initialize Settings
 local AimSettings = {
-    Enabled = false,
-    FOV = 100,
-    AimPart = "Head",
-    IgnoreHorses = true,
-    WallCheck = true,
-    Hotkey = "Q"
+    Enabled = AimToggle.Value,
+    FOV = AimFOV.Value,
+    AimPart = AimPart.Value,
+    IgnoreHorses = HorseToggle.Value,
+    WallCheck = WallToggle.Value,
+    Hotkey = AimKey.Value
 }
 
+local OutlineSettings = {
+    NPCs = NpcEsp.Value,
+    Corpses = CorpseEsp.Value,
+    Ores = OreEsp.Value,
+    Tools = ToolEsp.Value,
+    Items = ItemEsp.Value,
+    ScanInterval = ScanSpeed.Value
+}
+
+local NoClipSettings = {
+    Enabled = NoclipToggle.Value,
+    Hotkey = NoclipKey.Value,
+    ButtonVisible = NoclipBtn.Value
+}
+
+-- Connect UI Callbacks
+AimToggle:OnChanged(function(v) AimSettings.Enabled = v end)
+AimFOV:OnChanged(function(v) AimSettings.FOV = v end)
+AimPart:OnChanged(function(v) AimSettings.AimPart = v end)
+HorseToggle:OnChanged(function(v) AimSettings.IgnoreHorses = v end)
+WallToggle:OnChanged(function(v) AimSettings.WallCheck = v end)
+AimKey:OnChanged(function(v) AimSettings.Hotkey = v end)
+
+NpcEsp:OnChanged(function(v) OutlineSettings.NPCs = v end)
+CorpseEsp:OnChanged(function(v) OutlineSettings.Corpses = v end)
+OreEsp:OnChanged(function(v) OutlineSettings.Ores = v end)
+ToolEsp:OnChanged(function(v) OutlineSettings.Tools = v end)
+ItemEsp:OnChanged(function(v) OutlineSettings.Items = v end)
+ScanSpeed:OnChanged(function(v) OutlineSettings.ScanInterval = v end)
+
+-- AIMBOT IMPLEMENTATION --
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Visible = false
 FOVCircle.Color = Color3.fromRGB(0, 255, 255)
@@ -24,7 +89,7 @@ FOVCircle.Radius = AimSettings.FOV
 FOVCircle.Filled = false
 
 local function IsNPC(model)
-    return model and model:FindFirstChild("Humanoid") and not game.Players:GetPlayerFromCharacter(model)
+    return model and model:FindFirstChild("Humanoid") and not Players:GetPlayerFromCharacter(model)
 end
 
 local function IsHorse(model)
@@ -34,13 +99,11 @@ end
 local function IsVisible(targetPart)
     if not AimSettings.WallCheck then return true end
     local camera = workspace.CurrentCamera
-    local origin = camera.CFrame.Position
-    local direction = (targetPart.Position - origin).Unit * 1000
     local raycastParams = RaycastParams.new()
-    raycastParams.FilterDescendantsInstances = {game.Players.LocalPlayer.Character}
+    raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
     raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-    local raycastResult = workspace:Raycast(origin, direction, raycastParams)
-    return not raycastResult or raycastResult.Instance:IsDescendantOf(targetPart.Parent)
+    local rayResult = workspace:Raycast(camera.CFrame.Position, (targetPart.Position - camera.CFrame.Position).Unit * 1000, raycastParams)
+    return not rayResult or rayResult.Instance:IsDescendantOf(targetPart.Parent)
 end
 
 local function GetClosestNPC()
@@ -66,16 +129,7 @@ local function GetClosestNPC()
     return closest
 end
 
--- Outlines Setting Yeah
-local OutlineSettings = {
-    NPCs = false,
-    Corpses = false,
-    Ores = false,
-    Tools = false,
-    Items = false,
-    ScanInterval = 1
-}
-
+-- OUTLINE IMPLEMENTATION --
 local Highlights = {}
 
 local function CreateHighlight(instance, color)
@@ -134,14 +188,7 @@ local function UpdateOutlines()
     end
 end
 
--- NoClip Yeahhhhhhhhhh
-local NoClipSettings = {
-    Enabled = false,
-    Hotkey = "F",
-    ButtonVisible = true,
-    ButtonMovable = false
-}
-
+-- NOCLIP IMPLEMENTATION --
 local NoClipButton = Instance.new("TextButton")
 NoClipButton.Name = "NoClipToggle"
 NoClipButton.Size = UDim2.new(0, 100, 0, 40)
@@ -161,157 +208,22 @@ local function ToggleNoClip()
     NoClipButton.BackgroundColor3 = NoClipSettings.Enabled and Color3.fromRGB(0, 100, 0) or Color3.fromRGB(30, 30, 30)
 end
 
--- Tab
-local AimTab = Window:CreateTab("Aimbot")
+NoclipToggle:OnChanged(function(v) 
+    NoClipSettings.Enabled = v 
+    ToggleNoClip() 
+end)
 
--- AimbotTab
-AimTab:CreateToggle({
-    Name = "Enable Aimbot",
-    Default = AimSettings.Enabled,
-    Callback = function(Value)
-        AimSettings.Enabled = Value
-    end
-})
+NoclipKey:OnChanged(function(v) NoClipSettings.Hotkey = v end)
 
-AimTab:CreateSlider({
-    Name = "FOV Size",
-    Min = 30,
-    Max = 300,
-    Default = AimSettings.FOV,
-    Callback = function(Value)
-        AimSettings.FOV = Value
-        FOVCircle.Radius = Value
-    end
-})
+NoclipBtn:OnChanged(function(v) 
+    NoClipSettings.ButtonVisible = v 
+    NoClipButton.Visible = v 
+end)
 
-AimTab:CreateDropdown({
-    Name = "Aim Part",
-    Options = {"Head", "Torso"},
-    Default = AimSettings.AimPart,
-    Callback = function(Option)
-        AimSettings.AimPart = Option
-    end
-})
-
-AimTab:CreateToggle({
-    Name = "Ignore Horses",
-    Default = AimSettings.IgnoreHorses,
-    Callback = function(Value)
-        AimSettings.IgnoreHorses = Value
-    end
-})
-
-AimTab:CreateToggle({
-    Name = "Wall Check",
-    Default = AimSettings.WallCheck,
-    Callback = function(Value)
-        AimSettings.WallCheck = Value
-    end
-})
-
-AimTab:CreateKeybind({
-    Name = "Aimbot Hotkey",
-    Default = AimSettings.Hotkey,
-    Callback = function(Key)
-        AimSettings.Hotkey = Key
-    end
-})
-
--- VirsualTab
-local VisualTab = Window:CreateTab("Visuals")
-
--- VisualThings
-VisualTab:CreateToggle({
-    Name = "NPC Outlines",
-    Default = OutlineSettings.NPCs,
-    Callback = function(Value)
-        OutlineSettings.NPCs = Value
-    end
-})
-
-VisualTab:CreateToggle({
-    Name = "Corpse Outlines",
-    Default = OutlineSettings.Corpses,
-    Callback = function(Value)
-        OutlineSettings.Corpses = Value
-    end
-})
-
-VisualTab:CreateToggle({
-    Name = "Ore Outlines",
-    Default = OutlineSettings.Ores,
-    Callback = function(Value)
-        OutlineSettings.Ores = Value
-    end
-})
-
-VisualTab:CreateToggle({
-    Name = "Tool Outlines",
-    Default = OutlineSettings.Tools,
-    Callback = function(Value)
-        OutlineSettings.Tools = Value
-    end
-})
-
-VisualTab:CreateToggle({
-    Name = "Item Outlines",
-    Default = OutlineSettings.Items,
-    Callback = function(Value)
-        OutlineSettings.Items = Value
-    end
-})
-
-VisualTab:CreateSlider({
-    Name = "Scan Interval",
-    Min = 0.1,
-    Max = 5,
-    Default = OutlineSettings.ScanInterval,
-    Callback = function(Value)
-        OutlineSettings.ScanInterval = Value
-    end
-})
-
--- NoClipTab
-local NoClipTab = Window:CreateTab("NoClip")
-
--- NoClipThings
-NoClipTab:CreateToggle({
-    Name = "Enable NoClip",
-    Default = NoClipSettings.Enabled,
-    Callback = function(Value)
-        ToggleNoClip()
-    end
-})
-
-NoClipTab:CreateToggle({
-    Name = "Show Button",
-    Default = NoClipSettings.ButtonVisible,
-    Callback = function(Value)
-        NoClipSettings.ButtonVisible = Value
-        NoClipButton.Visible = Value
-    end
-})
-
-NoClipTab:CreateToggle({
-    Name = "Movable Button",
-    Default = NoClipSettings.ButtonMovable,
-    Callback = function(Value)
-        NoClipSettings.ButtonMovable = Value
-        NoClipButton.Draggable = Value
-    end
-})
-
-NoClipTab:CreateKeybind({
-    Name = "NoClip Hotkey",
-    Default = NoClipSettings.Hotkey,
-    Callback = function(Key)
-        NoClipSettings.Hotkey = Key
-    end
-})
-
--- Runtime Connections
-game:GetService("RunService").RenderStepped:Connect(function()
+-- RUNTIME CONNECTIONS --
+RunService.RenderStepped:Connect(function()
     FOVCircle.Visible = AimSettings.Enabled
+    FOVCircle.Radius = AimSettings.FOV
     FOVCircle.Position = Vector2.new(workspace.CurrentCamera.ViewportSize.X/2, workspace.CurrentCamera.ViewportSize.Y/2)
 
     if AimSettings.Enabled then
@@ -322,22 +234,12 @@ game:GetService("RunService").RenderStepped:Connect(function()
     end
 end)
 
-game:GetService("RunService").Stepped:Connect(function()
-    if NoClipSettings.Enabled and game.Players.LocalPlayer.Character then
-        for _, part in ipairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+RunService.Stepped:Connect(function()
+    if NoClipSettings.Enabled and LocalPlayer.Character then
+        for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
             if part:IsA("BasePart") then
                 part.CanCollide = false
             end
-        end
-    end
-end)
-
-game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
-    if not gameProcessed then
-        if input.KeyCode == Enum.KeyCode[AimSettings.Hotkey] then
-            AimSettings.Enabled = not AimSettings.Enabled
-        elseif input.KeyCode == Enum.KeyCode[NoClipSettings.Hotkey] then
-            ToggleNoClip()
         end
     end
 end)
@@ -354,8 +256,20 @@ task.spawn(function()
     end
 end)
 
+UIS.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed then
+        if input.KeyCode == Enum.KeyCode[AimSettings.Hotkey] then
+            AimSettings.Enabled = not AimSettings.Enabled
+        elseif input.KeyCode == Enum.KeyCode[NoClipSettings.Hotkey] then
+            ToggleNoClip()
+        end
+    end
+end)
+
+-- Initialize
+NoClipButton.Visible = NoClipSettings.ButtonVisible
 Luna:Notification({
-    Title = "ZypherHub Loaded",
-    Text = "Testing Testing Testing Testing And Testing!",
-    Duration = 10
+    Title = "Script Loaded",
+    Text = "Dead Rails hub activated!",
+    Duration = 5
 })
