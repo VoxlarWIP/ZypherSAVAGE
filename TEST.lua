@@ -163,8 +163,6 @@ end
 
 -- Tab
 local AimTab = Window:CreateTab("Aimbot")
-local VisualTab = Window:CreateTab("Visuals")
-local NoClipTab = Window:CreateTab("NoClip")
 
 -- AimbotTab
 AimTab:CreateToggle({
@@ -219,7 +217,10 @@ AimTab:CreateKeybind({
     end
 })
 
--- VisualTab
+-- VirsualTab
+local VisualTab = Window:CreateTab("Visuals")
+
+-- VisualThings
 VisualTab:CreateToggle({
     Name = "NPC Outlines",
     Default = OutlineSettings.NPCs,
@@ -271,6 +272,9 @@ VisualTab:CreateSlider({
 })
 
 -- NoClipTab
+local NoClipTab = Window:CreateTab("NoClip")
+
+-- NoClipThings
 NoClipTab:CreateToggle({
     Name = "Enable NoClip",
     Default = NoClipSettings.Enabled,
