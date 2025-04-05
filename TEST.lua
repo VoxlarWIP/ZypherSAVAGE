@@ -5,18 +5,13 @@ local Window = Luna:CreateWindow({
     Size = UDim2.new(0, 500, 0, 400)
 })
 
--- Services
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
--- Create all tabs at the top
 local CombatTab = Window:CreateTab("Combat")
-local VisualTab = Window:CreateTab("Visuals")
-local PlayerTab = Window:CreateTab("Player")
 
--- COMBAT TAB --
 CombatTab:CreateSection("Aimbot Settings")
 local AimToggle = CombatTab:CreateToggle({Name = "Enable Aimbot", Default = false})
 local AimFOV = CombatTab:CreateSlider({Name = "FOV Size", Min = 30, Max = 300, Default = 100})
@@ -25,7 +20,8 @@ local HorseToggle = CombatTab:CreateToggle({Name = "Ignore Horses", Default = tr
 local WallToggle = CombatTab:CreateToggle({Name = "Wall Check", Default = true})
 local AimKey = CombatTab:CreateKeybind({Name = "Aimbot Hotkey", Default = "Q"})
 
--- VISUAL TAB --
+local VisualTab = Window:CreateTab("Visuals")
+
 VisualTab:CreateSection("ESP Settings")
 local NpcEsp = VisualTab:CreateToggle({Name = "NPC Outlines", Default = false})
 local CorpseEsp = VisualTab:CreateToggle({Name = "Corpse Outlines", Default = false})
@@ -34,13 +30,13 @@ local ToolEsp = VisualTab:CreateToggle({Name = "Tool Outlines", Default = false}
 local ItemEsp = VisualTab:CreateToggle({Name = "Item Outlines", Default = false})
 local ScanSpeed = VisualTab:CreateSlider({Name = "Scan Interval", Min = 0.1, Max = 5, Default = 0.5})
 
--- PLAYER TAB --
+local PlayerTab = Window:CreateTab("Player")
+
 PlayerTab:CreateSection("NoClip Settings")
 local NoclipToggle = PlayerTab:CreateToggle({Name = "Enable NoClip", Default = false})
 local NoclipKey = PlayerTab:CreateKeybind({Name = "NoClip Hotkey", Default = "F"})
 local NoclipBtn = PlayerTab:CreateToggle({Name = "Show Button", Default = true})
 
--- Initialize Settings
 local AimSettings = {
     Enabled = AimToggle.Value,
     FOV = AimFOV.Value,
@@ -65,7 +61,6 @@ local NoClipSettings = {
     ButtonVisible = NoclipBtn.Value
 }
 
--- Connect UI Callbacks
 AimToggle:OnChanged(function(v) AimSettings.Enabled = v end)
 AimFOV:OnChanged(function(v) AimSettings.FOV = v end)
 AimPart:OnChanged(function(v) AimSettings.AimPart = v end)
@@ -80,7 +75,6 @@ ToolEsp:OnChanged(function(v) OutlineSettings.Tools = v end)
 ItemEsp:OnChanged(function(v) OutlineSettings.Items = v end)
 ScanSpeed:OnChanged(function(v) OutlineSettings.ScanInterval = v end)
 
--- AIMBOT IMPLEMENTATION --
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Visible = false
 FOVCircle.Color = Color3.fromRGB(0, 255, 255)
@@ -129,7 +123,6 @@ local function GetClosestNPC()
     return closest
 end
 
--- OUTLINE IMPLEMENTATION --
 local Highlights = {}
 
 local function CreateHighlight(instance, color)
@@ -188,7 +181,6 @@ local function UpdateOutlines()
     end
 end
 
--- NOCLIP IMPLEMENTATION --
 local NoClipButton = Instance.new("TextButton")
 NoClipButton.Name = "NoClipToggle"
 NoClipButton.Size = UDim2.new(0, 100, 0, 40)
@@ -220,7 +212,6 @@ NoclipBtn:OnChanged(function(v)
     NoClipButton.Visible = v 
 end)
 
--- RUNTIME CONNECTIONS --
 RunService.RenderStepped:Connect(function()
     FOVCircle.Visible = AimSettings.Enabled
     FOVCircle.Radius = AimSettings.FOV
@@ -266,7 +257,6 @@ UIS.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Initialize
 NoClipButton.Visible = NoClipSettings.ButtonVisible
 Luna:Notification({
     Title = "Script Loaded",
